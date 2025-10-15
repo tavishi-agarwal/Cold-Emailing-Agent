@@ -86,29 +86,29 @@ for i, r in enumerate(matched_recruiters):
     )
 
     with st.expander(f"📧 {r.get('Full Name')} ({r.get('role')}) at {r.get('Company Name')}"):
-    edited_email = st.text_area(
-        "Edit your email before sending (you can personalize it):",
-        value=email_body,
-        height=250,
-        key=f"email_body_{i}"
-    )
+        edited_email = st.text_area(
+            "Edit your email before sending (you can personalize it):",
+            value=email_body,
+            height=250,
+            key=f"email_body_{i}"
+        )
 
-    send_email = st.button(f"✉️ Send Email to {r.get('Full Name')}", key=f"send_{i}")
+        send_email = st.button(f"✉️ Send Email to {r.get('Full Name')}", key=f"send_{i}")
 
-    if send_email:
-        if not user_email or not user_password:
-            st.error("⚠️ Please provide your Gmail credentials before sending.")
-        else:
-            try:
-                msg = MIMEText(edited_email)  # Use the edited email body here
-                msg["Subject"] = f"Job Inquiry - {skills_str.title()}"
-                msg["From"] = user_email
-                msg["To"] = r.get("email", "")
+        if send_email:
+            if not user_email or not user_password:
+                st.error("⚠️ Please provide your Gmail credentials before sending.")
+            else:
+                try:
+                    msg = MIMEText(edited_email)  # Use the edited email body here
+                    msg["Subject"] = f"Job Inquiry - {skills_str.title()}"
+                    msg["From"] = user_email
+                    msg["To"] = r.get("email", "")
 
-                with smtplib.SMTP("smtp.gmail.com", 587) as server:
-                    server.starttls()
-                    server.login(user_email, user_password)
-                    server.send_message(msg)
-                st.success(f"✅ Email sent to {r.get('Full Name')}")
-            except Exception as e:
-                st.error(f"❌ Error sending email: {e}")
+                    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                        server.starttls()
+                        server.login(user_email, user_password)
+                        server.send_message(msg)
+                    st.success(f"✅ Email sent to {r.get('Full Name')}")
+                except Exception as e:
+                    st.error(f"❌ Error sending email: {e}")
