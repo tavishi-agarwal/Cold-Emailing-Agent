@@ -86,8 +86,14 @@ for i, r in enumerate(matched_recruiters):
     )
 
     with st.expander(f"📧 {r.get('Full Name')} ({r.get('role')}) at {r.get('Company Name')}"):
-        st.text_area("Email Preview", email_body, height=200)
-        send_email = st.button(f"Send Email to {r.get('Full Name')}", key=f"send_{i}")
+       edited_email = st.text_area(
+            "Edit your email before sending (you can personalize it):",
+             value=email_body,
+            height=250,
+            key=f"email_body_{i}"
+        )
+
+        send_email = st.button(f"✉️ Send Email to {r.get('Full Name')}", key=f"send_{i}")
 
         if send_email:
             if not user_email or not user_password:
