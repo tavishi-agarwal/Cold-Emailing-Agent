@@ -3,6 +3,10 @@ import pandas as pd
 from jinja2 import Template
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+
 
 # --- Streamlit UI setup ---
 st.set_page_config(page_title="Recruiter Matcher", page_icon="📧", layout="wide")
@@ -50,10 +54,13 @@ matched_df = pd.DataFrame(matched_recruiters)
 st.dataframe(matched_df)
 
 # --- Step 4: Email setup ---
+
 st.subheader("Step 3: Email Configuration")
 user_email = st.text_input("Enter your Gmail address")
 user_password = st.text_input("Enter your Gmail App Password (not your normal password!)", type="password")
 sender_name = st.text_input("Enter your name for email signature")
+resume_file = st.file_uploader("📎 Upload your resume (PDF/DOCX)", type=["pdf", "docx"])
+
 
 template_text = """
 Hi {{ name }},
@@ -86,29 +93,38 @@ for i, r in enumerate(matched_recruiters):
     )
 
     with st.expander(f"📧 {r.get('Full Name')} ({r.get('role')}) at {r.get('Company Name')}"):
-        edited_email = st.text_area(
-            "Edit your email before sending (you can personalize it):",
-            value=email_body,
-            height=250,
-            key=f"email_body_{i}"
-        )
-
-        send_email = st.button(f"✉️ Send Email to {r.get('Full Name')}", key=f"send_{i}")
+        st.text_area("Email Preview", email_body, height=200)
+        send_email = st.button(f"Send Email to {r.get('Full Name')}", key=f"send_{i}")
 
         if send_email:
             if not user_email or not user_password:
                 st.error("⚠️ Please provide your Gmail credentials before sending.")
+            elif resume_file is None:
+                st.error("⚠️ Please upload your resume before sending emails.")
             else:
                 try:
-                    msg = MIMEText(edited_email)  # Use the edited email body here
-                    msg["Subject"] = f"Job Inquiry - {skills_str.title()}"
+            # Create a multipart message
+                    msg = MIMEMultipart()
                     msg["From"] = user_email
                     msg["To"] = r.get("email", "")
+                    msg["Subject"] = f"Job Inquiry - {skills_str.title()}"
 
+                    # Add the email body
+                    msg.attach(MIMEText(email_body, "plain"))
+
+                    # Attach the resume (same for all emails)
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(resume_file.read())
+                    encoders.encode_base64(part)
+                    part.add_header("Content-Disposition", f"attachment; filename={resume_file.name}")
+                    msg.attach(part)
+
+                    # Send email
                     with smtplib.SMTP("smtp.gmail.com", 587) as server:
                         server.starttls()
                         server.login(user_email, user_password)
                         server.send_message(msg)
+
                     st.success(f"✅ Email sent to {r.get('Full Name')}")
                 except Exception as e:
                     st.error(f"❌ Error sending email: {e}")
